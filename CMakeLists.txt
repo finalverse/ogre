@@ -237,6 +237,7 @@ elseif (ANDROID)
   set(TargetPlatform "Android")
   set(OGRE_PLATFORM OGRE_PLATFORM_ANDROID)
   option(OGRE_BUILD_ANDROID_JNI_SAMPLE "Enable JNI Sample" FALSE)
+  option(CITY "Enable JNI City" FALSE)
 
   set(OGRE_BUILD_RENDERSYSTEM_GLES2 TRUE CACHE BOOL "Forcing OpenGL ES 2 RenderSystem for Android" FORCE)
 
@@ -330,6 +331,7 @@ option(OGRE_BUILD_COMPONENT_RTSHADERSYSTEM "Build RTShader System component" TRU
 cmake_dependent_option(OGRE_BUILD_RTSHADERSYSTEM_SHADERS "Build RTShader System FFP shaders" TRUE "OGRE_BUILD_COMPONENT_RTSHADERSYSTEM" FALSE)
 
 cmake_dependent_option(OGRE_BUILD_SAMPLES "Build Ogre demos" TRUE "OGRE_BUILD_COMPONENT_OVERLAY;OGRE_BUILD_COMPONENT_BITES" FALSE)
+cmake_dependent_option(OGRE_BUILD_CITIES "Build Ogre city " TRUE "OGRE_BUILD_COMPONENT_OVERLAY;OGRE_BUILD_COMPONENT_BITES" FALSE)
 cmake_dependent_option(OGRE_BUILD_TOOLS "Build the command-line tools" TRUE "pugixml_FOUND;NOT APPLE_IOS;NOT WINDOWS_STORE;NOT WINDOWS_PHONE" FALSE)
 cmake_dependent_option(OGRE_BUILD_XSIEXPORTER "Build the Softimage exporter" FALSE "Softimage_FOUND" FALSE)
 cmake_dependent_option(OGRE_BUILD_LIBS_AS_FRAMEWORKS "Build frameworks for libraries on OS X." TRUE "APPLE;NOT OGRE_BUILD_PLATFORM_APPLE_IOS" FALSE)
@@ -370,6 +372,7 @@ option(OGRE_CONFIG_ENABLE_TBB_SCHEDULER "Enable TBB's scheduler initialisation/s
 cmake_dependent_option(OGRE_CONFIG_FILESYSTEM_UNICODE "paths expected to be in UTF-8 and wchar_t file IO routines are used" TRUE "MSVC" FALSE)
 # Customise what to install
 cmake_dependent_option(OGRE_INSTALL_SAMPLES "Install Ogre demos." TRUE "OGRE_BUILD_SAMPLES" FALSE)
+cmake_dependent_option(OGRE_INSTALL_CITIES "Install Ogre city." TRUE "OGRE_BUILD_CITIES" FALSE)
 option(OGRE_INSTALL_TOOLS "Install Ogre tools." TRUE)
 option(OGRE_INSTALL_DOCS "Install documentation." TRUE)
 cmake_dependent_option(OGRE_INSTALL_PDB "Install debug pdb files" TRUE "MSVC" FALSE)
@@ -467,6 +470,9 @@ endif ()
 # Setup samples
 add_subdirectory(Samples)
 
+# Setup cities
+add_subdirectory(Cities)
+
 # Setup command-line tools
 if (OGRE_BUILD_TOOLS)
   add_subdirectory(Tools)
@@ -485,6 +491,13 @@ install(DIRECTORY Media/Main DESTINATION "${OGRE_MEDIA_PATH}/")
 install(DIRECTORY Media/RTShaderLib DESTINATION "${OGRE_MEDIA_PATH}/")
 if (OGRE_INSTALL_SAMPLES)
   install(DIRECTORY Samples/Media/ DESTINATION ${OGRE_MEDIA_PATH})
+endif ()
+
+# Install city media files
+install(DIRECTORY Media/Main DESTINATION "${OGRE_MEDIA_PATH}/")
+install(DIRECTORY Media/RTShaderLib DESTINATION "${OGRE_MEDIA_PATH}/")
+if (OGRE_INSTALL_CITIES)
+  install(DIRECTORY Cities/Media/ DESTINATION ${OGRE_MEDIA_PATH})
 endif ()
 
 # Provide CPack packaging target

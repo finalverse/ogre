@@ -65,6 +65,7 @@ elseif (UNIX)
 endif ()
 
 set(OGRE_SAMPLE_PATH "/OGRE/Samples")
+set(OGRE_CITY_PATH "/OGRE/Cities")
 
 # install targets according to current build type
 function(ogre_install_target TARGETNAME SUFFIX EXPORT)
@@ -357,6 +358,88 @@ function(ogre_config_sample_lib SAMPLENAME)
 
 endfunction(ogre_config_sample_lib)
 
+# setup Ogre city build
+function(ogre_config_city_common CITYNAME)
+  ogre_config_common(${CITYNAME})
+
+  if (OGRE_PROJECT_FOLDERS)
+    set_property(TARGET ${LIBNAME} PROPERTY FOLDER Cities)
+  endif ()
+  
+  if (APPLE)
+    # On OS X, create .app bundle
+    set_property(TARGET ${CITYNAME} PROPERTY MACOSX_BUNDLE TRUE)
+    if (NOT APPLE_IOS)
+      # Add the path where the Ogre framework was found
+      if(${OGRE_FRAMEWORK_PATH})
+        set_target_properties(${CITYNAME} PROPERTIES
+          COMPILE_FLAGS "-F${OGRE_FRAMEWORK_PATH}"
+          LINK_FLAGS "-F${OGRE_FRAMEWORK_PATH}"
+        )
+      endif()
+    endif()
+  endif (APPLE)
+  if (NOT OGRE_STATIC)
+    if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+      # disable "lib" prefix on Unix
+      set_target_properties(${CITYNAME} PROPERTIES PREFIX "")
+    endif (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  endif()
+
+  if (NOT WIN32)
+    set_target_properties(${CITYNAME} PROPERTIES VERSION ${OGRE_SOVERSION} SOVERSION ${OGRE_SOVERSION})
+  endif()
+
+  if (OGRE_INSTALL_CITIES AND NOT OGRE_STATIC)
+	ogre_install_target(${CITYNAME} ${OGRE_CITY_PATH} FALSE)
+  endif()
+  
+endfunction(ogre_config_city_common)
+
+function(ogre_config_city_exe CITYNAME)
+  ogre_config_city_common(${CITYNAME})
+  if (OGRE_INSTALL_PDB AND OGRE_INSTALL_CITIES)
+	  # install debug pdb files - no _d on exe
+	  install(FILES $<TARGET_PDB_FILE:${CITYNAME}>
+		  DESTINATION bin${OGRE_DEBUG_PATH}
+		  CONFIGURATIONS Debug
+		  )
+	  install(FILES $<TARGET_PDB_FILE:${CITYNAME}>
+		  DESTINATION bin${OGRE_RELWDBG_PATH}
+		  CONFIGURATIONS RelWithDebInfo
+		  )
+  endif ()
+endfunction(ogre_config_city_exe)
+
+function(ogre_config_city_lib CITYNAME)
+  ogre_config_city_common(${CITYNAME})
+  if (OGRE_INSTALL_PDB AND OGRE_INSTALL_CITIES)
+	  # install debug pdb files - with a _d on lib
+    ogre_produces_pdb(PRODUCES_PDB ${CITYNAME})
+    if (PRODUCES_PDB)
+	  install(FILES $<TARGET_PDB_FILE:${CITYNAME}>
+		  DESTINATION bin${OGRE_DEBUG_PATH}
+		  CONFIGURATIONS Debug
+		  )
+	  install(FILES $<TARGET_PDB_FILE:${CITYNAME}>
+		  DESTINATION bin${OGRE_RELWDBG_PATH}
+		  CONFIGURATIONS RelWithDebInfo
+		  )
+    endif ()
+  endif ()
+
+  if(NOT OGRE_STATIC AND (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+    # add GCC visibility flags to shared library build
+    set_target_properties(${CITYNAME} PROPERTIES COMPILE_FLAGS "${OGRE_VISIBILITY_FLAGS}")
+  endif()
+
+  # Add city to the list of link targets
+  # Global property so that we can build this up across entire city tree
+  # since vars are local to containing scope of directories / functions
+  get_property(OGRE_CITIES_LIST GLOBAL PROPERTY "OGRE_CITIES_LIST")
+  set_property (GLOBAL PROPERTY "OGRE_CITIES_LIST" ${OGRE_CITIES_LIST} ${CITYNAME})
+
+endfunction(ogre_config_city_lib)
 
 # setup Ogre tool build
 function(ogre_config_tool TOOLNAME)

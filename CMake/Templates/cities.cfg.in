@@ -1,0 +1,3 @@
+CityFolder=@OGRE_CITIES_DIR_REL@
+CityPlugin=DefaultCities
+@OGRE_COMMENT_PLAYPENTESTS@CityPlugin=PlayPenTests

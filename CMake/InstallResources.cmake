@@ -53,6 +53,7 @@ endif()
 if (WIN32)
   set(OGRE_TEST_MEDIA_DIR_REL "../Tests/${OGRE_MEDIA_PATH}")
   set(OGRE_SAMPLES_DIR_REL ".")
+  set(OGRE_CITIES_DIR_REL ".")
 elseif (APPLE)
   if(APPLE_IOS)
     set(OGRE_TEST_MEDIA_DIR_REL "../../Tests/${OGRE_MEDIA_PATH}")
@@ -61,10 +62,12 @@ elseif (APPLE)
   endif()
   # these are resolved relative to the app bundle
   set(OGRE_SAMPLES_DIR_REL "Contents/Plugins/")
+  set(OGRE_CITIES_DIR_REL "Contents/Plugins/")
   set(OGRE_CFG_INSTALL_PATH "bin")
 elseif (UNIX)
   set(OGRE_TEST_MEDIA_DIR_REL "${CMAKE_INSTALL_PREFIX}/Tests/Media")
   set(OGRE_SAMPLES_DIR_REL "${CMAKE_INSTALL_PREFIX}/${OGRE_LIB_DIRECTORY}/OGRE/Samples")
+  set(OGRE_CITIES_DIR_REL "${CMAKE_INSTALL_PREFIX}/${OGRE_LIB_DIRECTORY}/OGRE/Cities")
 endif ()
 
 # generate OgreConfigPaths.h
@@ -154,6 +157,7 @@ if(NOT OGRE_BUILD_TESTS)
 endif()
 
 set(OGRE_SAMPLE_RESOURCES "")
+set(OGRE_CITY_RESOURCES "")
 
 set(OGRE_CORE_MEDIA_DIR "${OGRE_MEDIA_DIR_REL}")
 
@@ -165,9 +169,16 @@ if(OGRE_INSTALL_SAMPLES)
   file(READ ${PROJECT_BINARY_DIR}/sample_resources.cfg OGRE_SAMPLE_RESOURCES)
 endif()
 
+if(OGRE_INSTALL_CITIES)
+  # deal with city resources
+  configure_file(${OGRE_TEMPLATES_DIR}/city_resources.cfg.in ${PROJECT_BINARY_DIR}/city_resources.cfg)
+  file(READ ${PROJECT_BINARY_DIR}/city_resources.cfg OGRE_CITY_RESOURCES)
+endif()
+
 configure_file(${OGRE_TEMPLATES_DIR}/resources.cfg.in ${PROJECT_BINARY_DIR}/inst/bin/resources.cfg)
 configure_file(${OGRE_TEMPLATES_DIR}/plugins.cfg.in ${PROJECT_BINARY_DIR}/inst/bin/plugins.cfg)
 configure_file(${OGRE_TEMPLATES_DIR}/samples.cfg.in ${PROJECT_BINARY_DIR}/inst/bin/samples.cfg)
+configure_file(${OGRE_TEMPLATES_DIR}/cities.cfg.in ${PROJECT_BINARY_DIR}/inst/bin/cities.cfg)
 
 # install resource files
 install(FILES 
@@ -179,6 +190,7 @@ install(FILES
 # CREATE CONFIG FILES - BUILD DIR VERSIONS
 if (NOT (APPLE_IOS OR WINDOWS_STORE OR WINDOWS_PHONE))
   set(OGRE_MEDIA_DIR_REL "${PROJECT_SOURCE_DIR}/Samples/Media")
+  set(OGRE_MEDIA_DIR_REL "${PROJECT_SOURCE_DIR}/Cities/Media")
   set(OGRE_CORE_MEDIA_DIR "${PROJECT_SOURCE_DIR}/Media")
   set(OGRE_TEST_MEDIA_DIR_REL "${PROJECT_SOURCE_DIR}/Tests/Media")
 else ()
@@ -191,18 +203,27 @@ endif ()
 if (WIN32)
   set(OGRE_PLUGIN_DIR_REL ".")
   set(OGRE_SAMPLES_DIR_REL ".")
+  set(OGRE_CITIES_DIR_REL ".")
 elseif (APPLE)
   set(OGRE_PLUGIN_DIR_REL "Contents/Frameworks/")
   set(OGRE_SAMPLES_DIR_REL "Contents/Plugins/")
+  set(OGRE_CITIES_DIR_REL "Contents/Plugins/")
 elseif (UNIX)
   set(OGRE_PLUGIN_DIR_REL "${PROJECT_BINARY_DIR}/lib")
   set(OGRE_SAMPLES_DIR_REL "${PROJECT_BINARY_DIR}/lib")
+  set(OGRE_CITIES_DIR_REL "${PROJECT_BINARY_DIR}/lib")
 endif ()
 
 if(OGRE_BUILD_SAMPLES)
   # deal with sample resources
   configure_file(${OGRE_TEMPLATES_DIR}/sample_resources.cfg.in ${PROJECT_BINARY_DIR}/sample_resources.cfg)
   file(READ ${PROJECT_BINARY_DIR}/sample_resources.cfg OGRE_SAMPLE_RESOURCES)
+endif()
+
+if(OGRE_BUILD_CITIES)
+  # deal with city resources
+  configure_file(${OGRE_TEMPLATES_DIR}/city_resources.cfg.in ${PROJECT_BINARY_DIR}/city_resources.cfg)
+  file(READ ${PROJECT_BINARY_DIR}/city_resources.cfg OGRE_CITY_RESOURCES)
 endif()
 
 if (WINDOWS_STORE OR WINDOWS_PHONE OR EMSCRIPTEN)
@@ -223,6 +244,11 @@ elseif (MSVC AND NOT NMAKE)
   configure_file(${OGRE_TEMPLATES_DIR}/samples.cfg.in ${PROJECT_BINARY_DIR}/bin/relwithdebinfo/samples.cfg)
   configure_file(${OGRE_TEMPLATES_DIR}/samples.cfg.in ${PROJECT_BINARY_DIR}/bin/minsizerel/samples.cfg)
   configure_file(${OGRE_TEMPLATES_DIR}/samples.cfg.in ${PROJECT_BINARY_DIR}/bin/debug/samples.cfg)
+
+  configure_file(${OGRE_TEMPLATES_DIR}/cities.cfg.in ${PROJECT_BINARY_DIR}/bin/release/cities.cfg)
+  configure_file(${OGRE_TEMPLATES_DIR}/cities.cfg.in ${PROJECT_BINARY_DIR}/bin/relwithdebinfo/cities.cfg)
+  configure_file(${OGRE_TEMPLATES_DIR}/cities.cfg.in ${PROJECT_BINARY_DIR}/bin/minsizerel/cities.cfg)
+  configure_file(${OGRE_TEMPLATES_DIR}/cities.cfg.in ${PROJECT_BINARY_DIR}/bin/debug/cities.cfg)
 else() # other OS only need one cfg file
   # create resources.cfg
   configure_file(${OGRE_TEMPLATES_DIR}/resources.cfg.in ${PROJECT_BINARY_DIR}/bin/resources.cfg)
@@ -230,6 +256,8 @@ else() # other OS only need one cfg file
   configure_file(${OGRE_TEMPLATES_DIR}/plugins.cfg.in ${PROJECT_BINARY_DIR}/bin/plugins.cfg)
   # create samples.cfg
   configure_file(${OGRE_TEMPLATES_DIR}/samples.cfg.in ${PROJECT_BINARY_DIR}/bin/samples.cfg)
+  # create cities.cfg
+  configure_file(${OGRE_TEMPLATES_DIR}/cities.cfg.in ${PROJECT_BINARY_DIR}/bin/cities.cfg)
 endif ()
 
 
