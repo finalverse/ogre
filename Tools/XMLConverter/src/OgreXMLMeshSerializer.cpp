@@ -45,6 +45,7 @@ THE SOFTWARE.
 #include <cstddef>
 
 namespace Ogre {
+    static const char* texcoordDimName[] = {"u", "v", "w", "x"};
 
     //---------------------------------------------------------------------
     XMLMeshSerializer::XMLMeshSerializer()
@@ -501,14 +502,25 @@ namespace Ogre {
                 for (i = elems.begin(); i != iend; ++i)
                 {
                     VertexElement& elem = *i;
+                    auto dims = VertexElement::getTypeCount(elem.getType());
                     switch(elem.getSemantic())
                     {
                     case VES_POSITION:
-                        elem.baseVertexPointerToElement(pVert, &pFloat);
                         dataNode = vertexNode.append_child("position");
-                        dataNode.append_attribute("x") = StringConverter::toString(pFloat[0]).c_str();
-                        dataNode.append_attribute("y") = StringConverter::toString(pFloat[1]).c_str();
-                        dataNode.append_attribute("z") = StringConverter::toString(pFloat[2]).c_str();
+                        if(elem.getType() == VET_HALF3)
+                        {
+                            elem.baseVertexPointerToElement(pVert, &pShort);
+                            dataNode.append_attribute("x") = StringConverter::toString(Bitwise::halfToFloat(*pShort++)).c_str();
+                            dataNode.append_attribute("y") = StringConverter::toString(Bitwise::halfToFloat(*pShort++)).c_str();
+                            dataNode.append_attribute("z") = StringConverter::toString(Bitwise::halfToFloat(*pShort++)).c_str();
+                        }
+                        else
+                        {
+                            elem.baseVertexPointerToElement(pVert, &pFloat);
+                            dataNode.append_attribute("x") = StringConverter::toString(pFloat[0]).c_str();
+                            dataNode.append_attribute("y") = StringConverter::toString(pFloat[1]).c_str();
+                            dataNode.append_attribute("z") = StringConverter::toString(pFloat[2]).c_str();
+                        }
                         break;
                     case VES_NORMAL:
                         elem.baseVertexPointerToElement(pVert, &pFloat);
@@ -560,71 +572,24 @@ namespace Ogre {
                         {
                         case VET_FLOAT1:
                             elem.baseVertexPointerToElement(pVert, &pFloat);
+                            for(int j = 0; j < dims; ++j)
+                            {
+                                dataNode.append_attribute(texcoordDimName[j]) = StringConverter::toString(*pFloat++).c_str();
+                            }
                             break;
                         case VET_SHORT1:
+                            elem.baseVertexPointerToElement(pVert, &pShort);
+                            for(int j = 0; j < dims; ++j)
+                            {
+                                dataNode.append_attribute(texcoordDimName[j]) = StringConverter::toString(*pShort++ / 65535.0f).c_str();
+                            }
+                            break;
                         case VET_HALF1:
                             elem.baseVertexPointerToElement(pVert, &pShort);
-                            break;
-                        default:
-                            // done below
-                            break;
-                        }
-
-                        switch(elem.getType())
-                        {
-                        case VET_FLOAT1:
-                            dataNode.append_attribute("u") = StringConverter::toString(*pFloat++).c_str();
-                            break;
-                        case VET_FLOAT2:
-                            dataNode.append_attribute("u") = StringConverter::toString(*pFloat++).c_str();
-                            dataNode.append_attribute("v") = StringConverter::toString(*pFloat++).c_str();
-                            break;
-                        case VET_FLOAT3:
-                            dataNode.append_attribute("u") = StringConverter::toString(*pFloat++).c_str();
-                            dataNode.append_attribute("v") = StringConverter::toString(*pFloat++).c_str();
-                            dataNode.append_attribute("w") = StringConverter::toString(*pFloat++).c_str();
-                            break;
-                        case VET_FLOAT4:
-                            dataNode.append_attribute("u") = StringConverter::toString(*pFloat++).c_str();
-                            dataNode.append_attribute("v") = StringConverter::toString(*pFloat++).c_str();
-                            dataNode.append_attribute("w") = StringConverter::toString(*pFloat++).c_str();
-                            dataNode.append_attribute("x") = StringConverter::toString(*pFloat++).c_str();
-                            break;
-                        case VET_SHORT1:
-                            dataNode.append_attribute("u") =  StringConverter::toString(*pShort++ / 65535.0f).c_str();
-                            break;
-                        case VET_SHORT2:
-                            dataNode.append_attribute("u") =  StringConverter::toString(*pShort++ / 65535.0f).c_str();
-                            dataNode.append_attribute("v") =  StringConverter::toString(*pShort++ / 65535.0f).c_str();
-                            break;
-                        case VET_SHORT3:
-                            dataNode.append_attribute("u") =  StringConverter::toString(*pShort++ / 65535.0f).c_str();
-                            dataNode.append_attribute("v") =  StringConverter::toString(*pShort++ / 65535.0f).c_str();
-                            dataNode.append_attribute("w") =  StringConverter::toString(*pShort++ / 65535.0f).c_str();
-                            break;
-                        case VET_SHORT4:
-                            dataNode.append_attribute("u") =  StringConverter::toString(*pShort++ / 65535.0f).c_str();
-                            dataNode.append_attribute("v") =  StringConverter::toString(*pShort++ / 65535.0f).c_str();
-                            dataNode.append_attribute("w") =  StringConverter::toString(*pShort++ / 65535.0f).c_str();
-                            dataNode.append_attribute("x") =  StringConverter::toString(*pShort++ / 65535.0f).c_str();
-                            break;
-                        case VET_HALF1:
-                            dataNode.append_attribute("u") =  StringConverter::toString(Bitwise::halfToFloat(*pShort++)).c_str();
-                            break;
-                        case VET_HALF2:
-                            dataNode.append_attribute("u") =  StringConverter::toString(Bitwise::halfToFloat(*pShort++)).c_str();
-                            dataNode.append_attribute("v") =  StringConverter::toString(Bitwise::halfToFloat(*pShort++)).c_str();
-                            break;
-                        case VET_HALF3:
-                            dataNode.append_attribute("u") =  StringConverter::toString(Bitwise::halfToFloat(*pShort++)).c_str();
-                            dataNode.append_attribute("v") =  StringConverter::toString(Bitwise::halfToFloat(*pShort++)).c_str();
-                            dataNode.append_attribute("w") =  StringConverter::toString(Bitwise::halfToFloat(*pShort++)).c_str();
-                            break;
-                        case VET_HALF4:
-                            dataNode.append_attribute("u") =  StringConverter::toString(Bitwise::halfToFloat(*pShort++)).c_str();
-                            dataNode.append_attribute("v") =  StringConverter::toString(Bitwise::halfToFloat(*pShort++)).c_str();
-                            dataNode.append_attribute("w") =  StringConverter::toString(Bitwise::halfToFloat(*pShort++)).c_str();
-                            dataNode.append_attribute("x") =  StringConverter::toString(Bitwise::halfToFloat(*pShort++)).c_str();
+                            for(int j = 0; j < dims; ++j)
+                            {
+                                dataNode.append_attribute(texcoordDimName[j]) = StringConverter::toString(Bitwise::halfToFloat(*pShort++)).c_str();
+                            }
                             break;
                         case VET_UBYTE4_NORM:
                             elem.baseVertexPointerToElement(pVert, &pColour);
@@ -636,10 +601,10 @@ namespace Ogre {
                             break;
                         case VET_UBYTE4:
                             elem.baseVertexPointerToElement(pVert, &pChar);
-                            dataNode.append_attribute("u") =  StringConverter::toString(*pChar++ / 255.0f).c_str();
-                            dataNode.append_attribute("v") =  StringConverter::toString(*pChar++ / 255.0f).c_str();
-                            dataNode.append_attribute("w") =  StringConverter::toString(*pChar++ / 255.0f).c_str();
-                            dataNode.append_attribute("x") =  StringConverter::toString(*pChar++ / 255.0f).c_str();
+                            for(int j = 0; j < 4; ++j)
+                            {
+                                dataNode.append_attribute(texcoordDimName[j]) = StringConverter::toString(*pChar++ / 255.0f).c_str();
+                            }
                             break;
                         default:
                             OgreAssert(false, "Unsupported VET");
@@ -1152,108 +1117,43 @@ namespace Ogre {
                         // Record the latest texture coord entry
                         texCoordElem = xmlElem;
 
-                        if (!xmlElem.attribute("u"))
-                            OGRE_EXCEPT(Exception::ERR_ITEM_NOT_FOUND, "Texcoord 'u' attribute not found.", "XMLMeshSerializer::readGeometry");
-                        if (dims > 1 && !xmlElem.attribute("v"))
-                            OGRE_EXCEPT(Exception::ERR_ITEM_NOT_FOUND, "Texcoord 'v' attribute not found.", "XMLMeshSerializer::readGeometry");
-                        if (dims > 2 && !xmlElem.attribute("w"))
-                            OGRE_EXCEPT(Exception::ERR_ITEM_NOT_FOUND, "Texcoord 'w' attribute not found.", "XMLMeshSerializer::readGeometry");
-                        if (dims > 3 && !xmlElem.attribute("x"))
-                            OGRE_EXCEPT(Exception::ERR_ITEM_NOT_FOUND, "Texcoord 'x' attribute not found.", "XMLMeshSerializer::readGeometry");
+                        for(int j = 0; j < dims; ++j)
+                        {
+                            if (!xmlElem.attribute(texcoordDimName[j]))
+                                OGRE_EXCEPT(Exception::ERR_ITEM_NOT_FOUND, StringUtil::format("Texcoord attribute '%s' not found.", texcoordDimName[j]));
+                        }
 
                         switch(VertexElement::getBaseType(elem.getType()))
                         {
                         case VET_FLOAT1:
                             elem.baseVertexPointerToElement(pVert, &pFloat);
+                            for(int j = 0; j < dims; ++j)
+                            {
+                                *pFloat++ = StringConverter::parseReal(xmlElem.attribute(texcoordDimName[j]).value());
+                            }
                             break;
                         case VET_SHORT1:
+                            elem.baseVertexPointerToElement(pVert, &pShort);
+                            for(int j = 0; j < dims; ++j)
+                            {
+                                *pShort++ = static_cast<uint16>(65535.0f * StringConverter::parseReal(xmlElem.attribute(texcoordDimName[j]).value()));
+                            }
+                            break;
                         case VET_HALF1:
                             elem.baseVertexPointerToElement(pVert, &pShort);
+                            for(int j = 0; j < dims; ++j)
+                            {
+                                *pShort++ = Bitwise::floatToHalf(StringConverter::parseReal(xmlElem.attribute(texcoordDimName[j]).value()));
+                            }
                             break;
-                        default:
-                            // done below
-                            break;
-                        }
-
-                        // depending on type, pack appropriately, can process colour channels separately which is a bonus
-                        switch (elem.getType()) 
-                        {
-                        case VET_FLOAT1:
-                            *pFloat++ = StringConverter::parseReal(xmlElem.attribute("u").value());
-                            break;
-
-                        case VET_FLOAT2:
-                            *pFloat++ = StringConverter::parseReal(xmlElem.attribute("u").value());
-                            *pFloat++ = StringConverter::parseReal(xmlElem.attribute("v").value());
-                            break;
-
-                        case VET_FLOAT3:
-                            *pFloat++ = StringConverter::parseReal(xmlElem.attribute("u").value());
-                            *pFloat++ = StringConverter::parseReal(xmlElem.attribute("v").value());
-                            *pFloat++ = StringConverter::parseReal(xmlElem.attribute("w").value());
-                            break;
-
-                        case VET_FLOAT4:
-                            *pFloat++ = StringConverter::parseReal(xmlElem.attribute("u").value());
-                            *pFloat++ = StringConverter::parseReal(xmlElem.attribute("v").value());
-                            *pFloat++ = StringConverter::parseReal(xmlElem.attribute("w").value());
-                            *pFloat++ = StringConverter::parseReal(xmlElem.attribute("x").value());
-                            break;
-
-                        case VET_HALF1:
-                            *pShort++ = Bitwise::floatToHalf(StringConverter::parseReal(xmlElem.attribute("u").value()));
-                            break;
-
-                        case VET_HALF2:
-                            *pShort++ = Bitwise::floatToHalf(StringConverter::parseReal(xmlElem.attribute("u").value()));
-                            *pShort++ = Bitwise::floatToHalf(StringConverter::parseReal(xmlElem.attribute("v").value()));
-                            break;
-
-                        case VET_HALF3:
-                            *pShort++ = Bitwise::floatToHalf(StringConverter::parseReal(xmlElem.attribute("u").value()));
-                            *pShort++ = Bitwise::floatToHalf(StringConverter::parseReal(xmlElem.attribute("v").value()));
-                            *pShort++ = Bitwise::floatToHalf(StringConverter::parseReal(xmlElem.attribute("w").value()));
-                            break;
-
-                        case VET_HALF4:
-                            *pShort++ = Bitwise::floatToHalf(StringConverter::parseReal(xmlElem.attribute("u").value()));
-                            *pShort++ = Bitwise::floatToHalf(StringConverter::parseReal(xmlElem.attribute("v").value()));
-                            *pShort++ = Bitwise::floatToHalf(StringConverter::parseReal(xmlElem.attribute("w").value()));
-                            *pShort++ = Bitwise::floatToHalf(StringConverter::parseReal(xmlElem.attribute("x").value()));
-                            break;
-
-                        case VET_SHORT1:
-                            *pShort++ = static_cast<uint16>(65535.0f * StringConverter::parseReal(xmlElem.attribute("u").value()));
-                            break;
-
-                        case VET_SHORT2:
-                            *pShort++ = static_cast<uint16>(65535.0f * StringConverter::parseReal(xmlElem.attribute("u").value()));
-                            *pShort++ = static_cast<uint16>(65535.0f * StringConverter::parseReal(xmlElem.attribute("v").value()));
-                            break;
-
-                        case VET_SHORT3:
-                            *pShort++ = static_cast<uint16>(65535.0f * StringConverter::parseReal(xmlElem.attribute("u").value()));
-                            *pShort++ = static_cast<uint16>(65535.0f * StringConverter::parseReal(xmlElem.attribute("v").value()));
-                            *pShort++ = static_cast<uint16>(65535.0f * StringConverter::parseReal(xmlElem.attribute("w").value()));
-                            break;
-
-                        case VET_SHORT4:
-                            *pShort++ = static_cast<uint16>(65535.0f * StringConverter::parseReal(xmlElem.attribute("u").value()));
-                            *pShort++ = static_cast<uint16>(65535.0f * StringConverter::parseReal(xmlElem.attribute("v").value()));
-                            *pShort++ = static_cast<uint16>(65535.0f * StringConverter::parseReal(xmlElem.attribute("w").value()));
-                            *pShort++ = static_cast<uint16>(65535.0f * StringConverter::parseReal(xmlElem.attribute("x").value()));
-                            break;
-
                         case VET_UBYTE4:
-
                             elem.baseVertexPointerToElement(pVert, &pChar);
-                            // round off instead of just truncating -- avoids magnifying rounding errors
-                            *pChar++ = static_cast<uint8>(0.5f + 255.0f * StringConverter::parseReal(xmlElem.attribute("u").value()));
-                            *pChar++ = static_cast<uint8>(0.5f + 255.0f * StringConverter::parseReal(xmlElem.attribute("v").value()));
-                            *pChar++ = static_cast<uint8>(0.5f + 255.0f * StringConverter::parseReal(xmlElem.attribute("w").value()));
-                            *pChar++ = static_cast<uint8>(0.5f + 255.0f * StringConverter::parseReal(xmlElem.attribute("x").value()));
+                            for(int j = 0; j < 4; ++j)
+                            {
+                                // round off instead of just truncating -- avoids magnifying rounding errors
+                                *pChar++ = static_cast<uint8>(0.5f + 255.0f * StringConverter::parseReal(xmlElem.attribute(texcoordDimName[j]).value()));
+                            }
                             break;
-
                         case VET_UBYTE4_NORM:
                             {
                                 elem.baseVertexPointerToElement(pVert, &pCol);
@@ -1265,7 +1165,6 @@ namespace Ogre {
                             OgreAssert(false, "Unsupported VET");
                             break;
                         }
-
                         break;
                     default:
                         break;
